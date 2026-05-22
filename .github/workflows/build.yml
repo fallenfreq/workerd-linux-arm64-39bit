@@ -16,9 +16,12 @@ jobs:
           curl -Lo bazel https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-arm64
           chmod +x bazel && sudo mv bazel /usr/local/bin/bazel
           # clang 19+ required for --embed-dir (C23 #embed)
-          # workerd uses -stdlib=libc++ so we need libc++-19-dev, not g++/libstdc++
+          # workerd's .bazelrc hardcodes /usr/lib/llvm-18/bin/clang, so we symlink it to clang-19
           wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 19
           sudo apt-get install -y libc++-19-dev libc++abi-19-dev lld-19
+          sudo ln -sf /usr/lib/llvm-19/bin/clang   /usr/lib/llvm-18/bin/clang
+          sudo ln -sf /usr/lib/llvm-19/bin/clang++ /usr/lib/llvm-18/bin/clang++
+          sudo ln -sf /usr/lib/llvm-19/bin/lld     /usr/lib/llvm-18/bin/lld
 
       - name: Clone workerd v1.20260520.1
         run: git clone --depth=1 --branch v1.20260520.1 https://github.com/cloudflare/workerd
@@ -36,9 +39,6 @@ jobs:
         run: |
           bazel build \
             --override_module=tcmalloc=$(realpath ../tcmalloc) \
-            --action_env=CC=clang-19 \
-            --action_env=CXX=clang++-19 \
-            --action_env=LD=lld-19 \
             --config=release_linux \
             //src/workerd/server:workerd
 
