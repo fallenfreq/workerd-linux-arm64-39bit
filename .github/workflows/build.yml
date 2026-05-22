@@ -30,9 +30,15 @@ jobs:
         run: |
           git clone https://github.com/google/tcmalloc
           cd tcmalloc && git checkout 12f2552
-          grep "kAddressBits" tcmalloc/internal/config.h
           sed -i 's/inline constexpr int kAddressBits = 48;/inline constexpr int kAddressBits = 39;/g' tcmalloc/internal/config.h
           grep "kAddressBits" tcmalloc/internal/config.h
+
+      - name: Cache Bazel artifacts
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/bazel
+          key: bazel-arm64-workerd-v1.20260520.1-tcmalloc-39bit
+          restore-keys: bazel-arm64-workerd-v1.20260520.1-
 
       - name: Build workerd with patched TCMalloc
         working-directory: workerd
@@ -40,7 +46,15 @@ jobs:
           bazel build \
             --override_module=tcmalloc=$(realpath ../tcmalloc) \
             --config=release_linux \
+            --disk_cache=$HOME/.cache/bazel-disk \
             //src/workerd/server:workerd
+
+      - name: Cache Bazel disk cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/bazel-disk
+          key: bazel-disk-arm64-workerd-v1.20260520.1-tcmalloc-39bit
+          restore-keys: bazel-disk-arm64-workerd-v1.20260520.1-
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
