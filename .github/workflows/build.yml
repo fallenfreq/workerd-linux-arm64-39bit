@@ -15,7 +15,11 @@ jobs:
         run: |
           curl -Lo bazel https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-arm64
           chmod +x bazel && sudo mv bazel /usr/local/bin/bazel
-          sudo apt-get update -y && sudo apt-get install -y clang lld
+          # clang 19+ required for --embed-dir (C23 #embed); ubuntu-24.04-arm ships clang 18
+          wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 19
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100
+          sudo apt-get install -y lld
 
       - name: Clone workerd v1.20260520.1
         run: git clone --depth=1 --branch v1.20260520.1 https://github.com/cloudflare/workerd
