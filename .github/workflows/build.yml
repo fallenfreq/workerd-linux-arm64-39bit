@@ -22,7 +22,7 @@ jobs:
 
       - name: Fetch Bazel dependencies
         working-directory: workerd
-        run: bazel fetch //src/workerd:workerd
+        run: bazel fetch //src/workerd/server:workerd
 
       - name: Patch TCMalloc kAddressBits 48 → 39
         working-directory: workerd
@@ -35,11 +35,11 @@ jobs:
 
       - name: Build
         working-directory: workerd
-        run: bazel build --config=release_linux //src/workerd:workerd
+        run: bazel build --config=release_linux //src/workerd/server:workerd
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: workerd-linux-arm64-39bit-v1.20260520.1
-          path: workerd/bazel-bin/src/workerd/workerd
+          path: workerd/bazel-bin/src/workerd/server/workerd
           retention-days: 30
