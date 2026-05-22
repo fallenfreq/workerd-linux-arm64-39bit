@@ -1,0 +1,50 @@
+name: Build workerd linux-arm64 (39-bit VAS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+
+    steps:
+      - name: Install Bazel
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y apt-transport-https curl gnupg
+          curl -fsSL https://bazel.build/bazel-release.pub.gpg \
+            | gpg --dearmor > bazel.gpg
+          sudo mv bazel.gpg /etc/apt/trusted.gpg.d/
+          echo "deb [arch=arm64] https://storage.googleapis.com/bazel-apt stable jdk1.8" \
+            | sudo tee /etc/apt/sources.list.d/bazel.list
+          sudo apt-get update -y && sudo apt-get install -y bazel
+
+      - name: Clone workerd v1.20260520.1
+        run: git clone --depth=1 --branch v1.20260520.1 https://github.com/cloudflare/workerd
+
+      - name: Fetch Bazel dependencies
+        working-directory: workerd
+        run: bazel fetch //src/workerd:workerd
+
+      - name: Patch TCMalloc kAddressBits 48 → 39
+        working-directory: workerd
+        run: |
+          CONFIG=$(find "$(bazel info output_base)" -path "*/tcmalloc/internal/config.h" | head -1)
+          echo "Patching: $CONFIG"
+          grep "kAddressBits" "$CONFIG"
+          sed -i 's/inline constexpr int kAddressBits = 48;/inline constexpr int kAddressBits = 39;/' "$CONFIG"
+          grep "kAddressBits" "$CONFIG"
+
+      - name: Build
+        working-directory: workerd
+        run: bazel build --config=release_linux //src/workerd:workerd
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: workerd-linux-arm64-39bit-v1.20260520.1
+          path: workerd/bazel-bin/src/workerd/workerd
+          retention-days: 30
