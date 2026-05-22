@@ -17,9 +17,11 @@ jobs:
           chmod +x bazel && sudo mv bazel /usr/local/bin/bazel
           # clang 19+ required for --embed-dir (C23 #embed); ubuntu-24.04-arm ships clang 18
           wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 19
+          # g++ brings GCC's libstdc++ headers that clang uses by default on Linux
+          sudo apt-get install -y lld-19 lld g++
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100
           sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100
-          sudo apt-get install -y lld
+          sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-19 100
 
       - name: Clone workerd v1.20260520.1
         run: git clone --depth=1 --branch v1.20260520.1 https://github.com/cloudflare/workerd
