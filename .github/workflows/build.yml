@@ -1,4 +1,4 @@
-name: Build workerd linux-arm64 (39-bit VAS)
+name: Build workerd linux-arm64 (39-bit VAS, static)
 
 on:
   workflow_dispatch:
@@ -37,15 +37,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/bazel
-          key: bazel-arm64-workerd-v1.20260520.1-tcmalloc-39bit
-          restore-keys: bazel-arm64-workerd-v1.20260520.1-
+          key: bazel-arm64-workerd-v1.20260520.1-tcmalloc-39bit-static
+          restore-keys: bazel-arm64-workerd-v1.20260520.1-tcmalloc-39bit-
 
-      - name: Build workerd with patched TCMalloc
+      - name: Build workerd with patched TCMalloc (fully static)
         working-directory: workerd
         run: |
           bazel build \
             --override_module=tcmalloc=$(realpath ../tcmalloc) \
             --config=release_linux \
+            --features=fully_static_link \
             --disk_cache=$HOME/.cache/bazel-disk \
             //src/workerd/server:workerd
 
@@ -53,8 +54,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/bazel-disk
-          key: bazel-disk-arm64-workerd-v1.20260520.1-tcmalloc-39bit
-          restore-keys: bazel-disk-arm64-workerd-v1.20260520.1-
+          key: bazel-disk-arm64-workerd-v1.20260520.1-tcmalloc-39bit-static
+          restore-keys: bazel-disk-arm64-workerd-v1.20260520.1-tcmalloc-39bit-
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
